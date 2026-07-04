@@ -93,24 +93,40 @@ emoji 猜词 表情猜词 成语 每日挑战 小游戏 侧边栏
 
 ---
 
-## 图片素材要求
+## 图片素材  （均已生成 / all generated）
 
-> ⚠️ 截图必须由你用 Chrome 真机截取后上传，无法由脚本生成。
-
-| 用途 | 尺寸 | 必填 | 说明 |
+| 用途 | 尺寸 | 必填 | 文件 |
 |---|---|---|---|
-| 商店图标 | 128×128 | ✅ 已有 | `public/icons/icon-128.png`（上传时单独传）。 |
-| 截图 | 1280×800 或 640×400 | ✅ 至少 1 张 | 见下方截图指南。 |
-| 小宣传图 | 440×280 | 推荐 | 可用图标放大 + 纯色底快速做。 |
-| 大宣传图 | 920×680 | 可选 | 想被推荐位收录再做。 |
-| 宽幅图 | 1400×560 | 可选 | |
+| 商店图标 | 128×128 | ✅ | `public/icons/icon-128.png`（上传时单独传）。 |
+| 截图 | 1280×800 | ✅ 已生成 6 张（上传最多 5 张） | `webstore/screens/0X-*.png` |
+| 小宣传图 | 440×280 | 推荐 | `webstore/promo-440x280.png` ✅ |
+| 大宣传图 | 920×680 | 可选 | `webstore/promo-920x680.png` ✅ |
+| 宽幅图 | 1400×560 | 可选 | 未做。 |
 
-### 截图指南
-1. 在 Chrome 加载 `dist/`（chrome://extensions → 开发者模式 → 加载已解压）。
-2. 点工具栏图标打开侧边栏。
-3. 全屏截图（macOS：`Cmd+Shift+4` 后按空格点窗口）。比例尽量接近 16:10。
-4. 至少准备 3 张更利于转化：开始页 / 答题中 / 结算分享页。
-5. 在 Dashboard 的「商品截图」处上传，给每张写一句中文图注。
+> 截图由 `webstore/capture-screens.mjs` 用真实 Chrome 自动渲染生成：1280×800、24-bit PNG、无 alpha，满足商店要求。题面由脚本自动作答，所以结算页显示真实分数。
+
+### 推荐上传的 5 张（按此顺序；商店最多 5 张）
+
+| 顺序 | 文件 | 画面 | 建议图注 |
+|---|---|---|---|
+| 1 | `01-home.png` | 首页：欢迎语 + 四种玩法入口 | 选一种玩法，一分钟开猜 |
+| 2 | `03-play-letter.png` | 答题中：点字块拼答案 | 看 Emoji，拼出正确答案 |
+| 3 | `06-result.png` | 结算：新纪录 + 成绩卡 | 每一局都在刷新最佳 |
+| 4 | `04-share.png` | 分享卡片浮层 | 复制成文字或图片，考考朋友 |
+| 5 | `05-play-choice.png` | 答题中：四选一（更轻松） | 简单题四选一，人人能玩 |
+
+> 备选：`02-profile.png`（贴纸册：等级 / 纪录 / 主题）。想展示成长系统，可替换掉第 5 张。
+> （注：profile 页是新存档，纪录显示 0；要带分数的版本，可在脚本里先预置 `localStorage` 的 `emoji-guess-profile` 再截图。）
+
+### 重新生成截图
+```bash
+npm run build
+# 若本机已装 playwright：
+node webstore/capture-screens.mjs
+# 否则用缓存里的 playwright（不修改 package.json）：
+PLAYWRIGHT=/Users/rodin/.npm/_npx/e41f203b7505f1fb/node_modules/playwright node webstore/capture-screens.mjs
+```
+脚本会输出 `webstore/screens/*@2x.png`，再用 ImageMagick 缩到 1280×800 并去掉 alpha（脚本如需可扩展自动缩放）。
 
 ---
 
