@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #fff8dc; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="680" viewBox="0 0 920 680" font-family="'PingFang SC','Heiti SC',sans-serif">
+  <defs>
+    <pattern id="dots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2" fill="#342b35" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <!-- background -->
+  <rect width="920" height="680" fill="#fff8dc"/>
+  <rect width="920" height="680" fill="url(#dots)"/>
+
+  <!-- tape, top-right -->
+  <g transform="translate(845 52) rotate(-22)">
+    <rect x="-62" y="-16" width="124" height="32" rx="5" fill="#ffd84f" stroke="#342b35" stroke-width="3"/>
+    <line x1="-38" y1="-16" x2="-38" y2="16" stroke="#342b35" stroke-width="1.4" opacity=".22"/>
+    <line x1="38" y1="-16" x2="38" y2="16" stroke="#342b35" stroke-width="1.4" opacity=".22"/>
+  </g>
+
+  <!-- speech bubble above mascot -->
+  <g transform="rotate(4 270 117)">
+    <path d="M250 142 L272 168 L292 142 Z" fill="#ffffff" stroke="#342b35" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="185" y="92" width="170" height="50" rx="14" fill="#ffffff" stroke="#342b35" stroke-width="3"/>
+    <text x="270" y="117" text-anchor="middle" dominant-baseline="central" font-weight="800" font-size="24" fill="#342b35">猜猜看！</text>
+  </g>
+
+  <!-- mascot shadow -->
+  <ellipse cx="240" cy="488" rx="132" ry="18" fill="#342b35" opacity=".13"/>
+
+  <!-- mascot -->
+  <g transform="translate(80 150) scale(2.5)">
+    <g transform="rotate(-3 64 64)">
+      <path d="M22 74c0-27 17-43 42-43s43 16 43 43c0 29-16 44-43 44S22 103 22 74Z" fill="#342B35" opacity=".18" transform="translate(6 4)"/>
+      <path d="M22 72c0-27 17-43 42-43s43 16 43 43c0 29-16 44-43 44S22 101 22 72Z" fill="#FF6F83" stroke="#3D303C" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M29 57C19 38 29 17 53 13c8 11 10 27 6 38-7 11-20 16-30 6Z" fill="#FF6F83" stroke="#3D303C" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M99 57c10-19 0-40-24-44-8 11-10 27-6 38 7 11 20 16 30 6Z" fill="#FF6F83" stroke="#3D303C" stroke-width="6" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="75" rx="6" ry="9" fill="#3D303C"/>
+      <ellipse cx="78" cy="75" rx="6" ry="9" fill="#3D303C"/>
+      <path d="M55 94q9 7 18 0" fill="none" stroke="#3D303C" stroke-width="5" stroke-linecap="round"/>
+      <ellipse cx="36" cy="93" rx="10" ry="5" fill="#FFB7C2"/>
+      <ellipse cx="92" cy="93" rx="10" ry="5" fill="#FFB7C2"/>
+    </g>
+  </g>
+
+  <!-- eyebrow pill -->
+  <g transform="rotate(-1.5 575 137)">
+    <rect x="470" y="120" width="210" height="34" rx="17" fill="#ff6f83" stroke="#342b35" stroke-width="3"/>
+    <text x="575" y="137" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="17" fill="#fff8dc">一分钟猜词小游戏</text>
+  </g>
+
+  <!-- title sticker -->
+  <g>
+    <rect x="461" y="176" width="310" height="120" rx="16" fill="#342b35" transform="translate(6 6)"/>
+    <rect x="455" y="170" width="310" height="120" rx="16" fill="#ffd84f" stroke="#342b35" stroke-width="4"/>
+    <text x="610" y="230" text-anchor="middle" dominant-baseline="central" font-weight="900" font-size="104" fill="#342b35">猜猜团</text>
+  </g>
+
+  <!-- subtitle + tagline -->
+  <text x="470" y="338" font-weight="800" font-size="30" letter-spacing="6" fill="#ff6f83">EMOJI GUESS</text>
+  <text x="470" y="374" font-weight="600" font-size="22" fill="#65545b">看 Emoji，猜词语 · 500 道脑洞题</text>
+
+  <!-- puzzle demo card -->
+  <g transform="rotate(2 460 572)">
+    <rect x="177" y="507" width="580" height="130" rx="20" fill="#342b35" transform="translate(7 7)"/>
+    <rect x="170" y="500" width="580" height="130" rx="20" fill="#ffffff" stroke="#342b35" stroke-width="4"/>
+    <line x1="410" y1="520" x2="410" y2="610" stroke="#cdbbbf" stroke-width="2" stroke-dasharray="6 7"/>
+    <text x="290" y="566" text-anchor="middle" dominant-baseline="central" font-size="96">🍉👀</text>
+    <text x="560" y="566" text-anchor="middle" dominant-baseline="central" font-weight="900" font-size="66" fill="#342b35">吃瓜</text>
+    <g transform="translate(680 566)">
+      <circle r="26" fill="#a9e2c8" stroke="#342b35" stroke-width="3"/>
+      <text x="0" y="2" text-anchor="middle" dominant-baseline="central" font-size="30" fill="#342b35">✓</text>
+    </g>
+  </g>
+
+  <!-- sparkles -->
+  <path d="M430 250 l5 12 12 5 -12 5 -5 12 -5 -12 -12 -5 12 -5 z" fill="#ff6f83"/>
+  <path d="M818 452 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#ffd84f" stroke="#342b35" stroke-width="1.6"/>
+  <path d="M748 472 l3.5 8 8 3.5 -8 3.5 -3.5 8 -3.5 -8 -8 -3.5 8 -3.5 z" fill="#ff6f83"/>
+</svg>
+</body>
+</html>
