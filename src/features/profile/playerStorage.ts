@@ -6,7 +6,8 @@ const KEY = "emoji-guess-profile";
 const emptyScores: Record<GameMode, number> = { timed: 0, level: 0, endless: 0, daily: 0 };
 
 export const DEFAULT_PROFILE: PlayerProfile = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  onboardingCompleted: false,
   level: 1,
   xp: 0,
   streakDays: 0,
@@ -25,19 +26,31 @@ async function readRaw(): Promise<unknown> {
   return value ? JSON.parse(value) : undefined;
 }
 
+function hasPlayed(value: Partial<PlayerProfile>): boolean {
+  return Boolean(
+    (value.xp ?? 0) > 0 ||
+    value.lastPlayedDate ||
+    Object.values(value.bestScores ?? {}).some((score) => (score ?? 0) > 0),
+  );
+}
+
+export function migrateProfile(raw: unknown): PlayerProfile {
+  if (!raw || typeof raw !== "object") return structuredClone(DEFAULT_PROFILE);
+  const value = raw as Partial<PlayerProfile> & { schemaVersion?: number };
+  return {
+    ...structuredClone(DEFAULT_PROFILE),
+    ...value,
+    schemaVersion: 2,
+    onboardingCompleted: value.schemaVersion === 2 ? Boolean(value.onboardingCompleted) : hasPlayed(value),
+    bestScores: { ...emptyScores, ...value.bestScores },
+    dailyResults: value.dailyResults ?? {},
+    recentQuestionIds: Array.isArray(value.recentQuestionIds) ? value.recentQuestionIds : [],
+  };
+}
+
 export async function loadProfile(): Promise<PlayerProfile> {
   try {
-    const raw = await readRaw();
-    if (!raw || typeof raw !== "object") return structuredClone(DEFAULT_PROFILE);
-    const value = raw as Partial<PlayerProfile>;
-    return {
-      ...structuredClone(DEFAULT_PROFILE),
-      ...value,
-      bestScores: { ...emptyScores, ...value.bestScores },
-      dailyResults: value.dailyResults ?? {},
-      recentQuestionIds: Array.isArray(value.recentQuestionIds) ? value.recentQuestionIds : [],
-      schemaVersion: 1,
-    };
+    return migrateProfile(await readRaw());
   } catch {
     return structuredClone(DEFAULT_PROFILE);
   }

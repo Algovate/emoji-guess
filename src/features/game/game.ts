@@ -23,12 +23,18 @@ export function pickQuestions(all: Question[], mode: GameMode, recent: string[])
   return shuffled.slice(0, MODE_CONFIG[mode].questionCount);
 }
 
-export function createGame(mode: GameMode, questions: Question[], now = Date.now()): GameState {
+export function createGame(
+  mode: GameMode,
+  questions: Question[],
+  now = Date.now(),
+  options: { onboarding?: boolean } = {},
+): GameState {
   const config = MODE_CONFIG[mode];
+  const onboarding = options.onboarding ?? false;
   return {
     mode, questions, index: 0, score: 0, combo: 0, bestCombo: 0, correct: 0, attempts: 0,
-    lives: 3, hintsUsed: 0, hintLevel: 0, startedAt: now,
-    deadline: config.durationMs ? now + config.durationMs : undefined,
+    lives: 3, hintsUsed: 0, hintUsed: false, onboarding, statsVisibleFromIndex: onboarding ? 3 : 0, startedAt: now,
+    deadline: config.durationMs && !onboarding ? now + config.durationMs : undefined,
     questionStartedAt: now, finished: false,
   };
 }

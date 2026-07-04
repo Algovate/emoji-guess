@@ -22,7 +22,9 @@ export function createAnswerChoices(question: Question, allQuestions: Question[]
     `${question.id}:choices`,
   ).slice(0, 3);
   if (alternatives.length < 3) {
-    const pool = [...new Set(allQuestions.filter((candidate) => candidate.id !== question.id).map((candidate) => candidate.answer))];
+    const pool = [...new Set(allQuestions
+      .filter((candidate) => candidate.id !== question.id && candidate.answer.length === question.answer.length)
+      .map((candidate) => candidate.answer))];
     const fallback = shuffled(pool, `${question.id}:fallback`)
       .filter((value) => value !== question.answer && !alternatives.includes(value))
       .slice(0, 3 - alternatives.length);

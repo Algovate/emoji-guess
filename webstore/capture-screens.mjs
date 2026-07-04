@@ -54,12 +54,18 @@ const BASE = `http://127.0.0.1:${server.address().port}`;
 console.log("serving dist at", BASE);
 
 const browser = await chromium.launch({ headless: true });
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2, locale: "zh-CN" });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, locale: "zh-CN" });
 const page = await ctx.newPage();
 page.setDefaultTimeout(10000);
+await page.addInitScript(() => {
+  const realNow = Date.now.bind(Date);
+  let offset = 0;
+  Date.now = () => realNow() + offset;
+  window.__advanceGameClock = (milliseconds) => { offset += milliseconds; };
+});
 
 async function shot(name) {
-  const p = path.join(OUT, `${name}@2x.png`);
+  const p = path.join(OUT, `${name}.png`);
   await page.screenshot({ path: p, clip: { x: 0, y: 0, width: 1280, height: 800 } });
   console.log("  captured", name);
 }
@@ -103,80 +109,40 @@ async function waitForAdvance(prevEmoji) {
   await sleep(450);
 }
 
-async function skipUntil(predicate, maxTries = 20) {
-  for (let i = 0; i < maxTries; i++) {
-    if (await predicate()) return true;
-    if ((await page.locator(".result-screen").count()) > 0) return false;
-    await page.locator(".game-tools button:last-child").click();
-    await sleep(420);
-    await page.waitForSelector(".game-screen .question-card", { timeout: 5000 }).catch(() => {});
-  }
-  return predicate();
-}
-
-async function startMode(cardClass) {
-  await page.click(`.mode-card.mode-card--${cardClass}`);
-  await page.waitForSelector(".game-screen");
-}
-
 try {
-  // ---- 01 HOME ----
+  // ---- 01 OPEN-AND-PLAY ----
   await page.goto(`${BASE}/game.html`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".home-screen .mode-card");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector(".first-play-screen .answer-choice");
   await sleep(700);
   await shot("01-home");
 
-  // ---- 02 PROFILE ----
-  await page.click(".profile-pill");
-  await page.waitForSelector(".profile-screen");
-  await sleep(600);
-  await shot("02-profile");
-  await page.click(".profile-screen .icon-button"); // back
-  await page.waitForSelector(".home-screen .mode-card");
-
-  // ---- 03 LETTER GAMEPLAY + 04 SHARE (one timed session) ----
-  await startMode("hero"); // 60秒快猜 (timed): free skips, big pool
-  await skipUntil(async () => (await page.locator(".letter-grid").count()) > 0);
-  await sleep(700);
-  await shot("03-play-letter");
-
-  await page.locator(".game-tools button:nth-child(2)").click(); // ↗ 分享这题
-  await page.waitForSelector(".share-overlay");
-  await page.waitForFunction(
-    () => /放心分享|题目不会包含答案/.test(document.querySelector(".share-status")?.textContent || ""),
-    { timeout: 8000 },
-  ).catch(() => {});
-  await sleep(900);
-  await shot("04-share");
-  await page.locator(".share-overlay .icon-button").click(); // close
-  await page.waitForSelector(".game-screen .question-card");
-
-  // ---- 05 CHOICE GAMEPLAY (fresh timed session) ----
-  await page.locator(".game-header .icon-button").click(); // exit to home
-  await page.waitForSelector(".home-screen .mode-card");
-  await startMode("hero");
-  await skipUntil(async () => (await page.locator(".choice-grid").count()) > 0);
-  await sleep(700);
+  // ---- 05 GUIDED CHOICE ----
+  await page.getByRole("button", { name: "摸鱼" }).click();
+  await sleep(850);
   await shot("05-play-choice");
 
-  // ---- 06 RESULTS (endless: solve 8 for a record, then end via skips) ----
-  await page.locator(".game-header .icon-button").click(); // exit home
-  await page.waitForSelector(".home-screen .mode-card");
-  await startMode("blue"); // 无尽 endless
-  let solved = 0;
-  for (let i = 0; i < 8; i++) {
-    if ((await page.locator(".result-screen").count()) > 0) break;
-    const prev = await currentEmoji();
-    const ok = await solveCurrent();
-    if (ok) { solved++; await waitForAdvance(prev); }
-  }
-  console.log(`  solved ${solved} in endless, ending via skip...`);
-  for (let i = 0; i < 6; i++) {
-    if ((await page.locator(".result-screen").count()) > 0) break;
-    await page.locator(".game-tools button:last-child").click(); // skip burns a life
-    await sleep(750);
-  }
-  await page.waitForSelector(".result-screen", { timeout: 6000 });
+  // ---- 03 GUIDED LETTER PLAY ----
+  await page.getByRole("button", { name: "吃瓜" }).click();
+  await sleep(850);
+  await shot("03-play-letter");
+
+  // Complete onboarding and show the full timed game.
+  await page.locator(".letter-tile:not([disabled])", { hasText: "防" }).click();
+  await sleep(850);
+  await shot("02-timed");
+
+  // ---- 04 SHARE ----
+  await page.getByRole("button", { name: /分享这题/ }).click();
+  await page.waitForSelector(".share-overlay");
+  await sleep(700);
+  await shot("04-share");
+  await page.locator(".share-overlay .icon-button").click();
+
+  // ---- 06 RESULTS ----
+  await page.evaluate(() => window.__advanceGameClock(61_000));
+  await page.waitForSelector(".result-screen", { timeout: 4000 });
   await sleep(900);
   await shot("06-result");
 } catch (err) {
