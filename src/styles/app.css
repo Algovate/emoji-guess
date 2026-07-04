@@ -81,3 +81,32 @@ h1 { margin:0; font-size:clamp(30px,9vw,45px); line-height:1.03; letter-spacing:
 :root[data-reduce-motion=true] *{animation:none!important;transition:none!important}
 @media (max-width:370px){.screen{padding-inline:13px}.welcome{grid-template-columns:1.25fr .75fr}.mascot{width:92px;height:82px}.mode-card{min-height:116px;padding:13px}.emoji-puzzle{font-size:46px}.primary-button{height:46px}.letter-grid{grid-template-columns:repeat(6,1fr);gap:5px}.letter-tile{height:36px}.question-card{min-height:190px}.feedback-slot{min-height:46px}}
 @media (prefers-color-scheme:dark){:root:not([data-theme]){--ink:#f8ecdc;--paper:#28232a;--surface:#38313a;--accent:#ee7890;--yellow:#b88924;--blue:#48758e;--mint:#4f806c}.app-shell{background:var(--paper)}}
+
+/* First-play flow: preserve the sticker language while removing lobby density. */
+.app-loading{min-height:100vh;background:linear-gradient(110deg,var(--paper) 30%,#fff8 50%,var(--paper) 70%);background-size:220% 100%;animation:loading-sheen 1.2s ease-in-out infinite}
+.first-play-screen{display:flex;flex-direction:column;padding-top:22px;background:radial-gradient(circle at 86% 8%,#ffcfda 0 42px,transparent 43px),radial-gradient(circle at 7% 42%,#f4d46266 0 5px,transparent 6px),var(--paper)}
+.first-play-brand{display:flex;align-items:center;gap:9px;min-height:42px;font-size:17px}
+.first-play-question{position:relative;display:grid;place-items:center;min-height:280px;margin:30px 0 24px;background:var(--surface);border:3px solid var(--ink);border-radius:22px;box-shadow:8px 8px 0 var(--accent);transform:rotate(-.7deg)}
+.first-play-question::before{content:"";position:absolute;top:-10px;left:50%;width:72px;height:22px;background:#f1cd6dbb;transform:translateX(-50%) rotate(2deg)}
+.first-play-question p{position:absolute;top:20px;left:22px;margin:0;color:#705c64;font-size:11px;font-weight:800}
+.first-play-question--correct{box-shadow:8px 8px 0 var(--mint)}
+.first-play-answer{margin-top:auto;padding:0 2px 20px}
+.first-play-heading{margin-bottom:16px}
+.first-play-heading h1{font-size:34px;letter-spacing:-.05em}
+.first-play-heading p{margin:6px 0 0;color:#705c64;font:500 12px/1.5 "PingFang SC",sans-serif}
+.first-play-answer .answer-choice{min-height:58px;font-size:15px}
+.first-play-feedback{min-height:36px;margin:12px 4px 0;color:#6f5962;font:600 10px/1.5 "PingFang SC",sans-serif;text-align:center}
+
+.score-row div:first-child em{display:block;margin-top:2px;color:#745f67;font-size:9px;font-style:normal}
+.answer-choice--wrong:disabled{opacity:1;color:#8b3c48;background:#ffd8de;border-style:dashed;box-shadow:none}
+.answer-choice--correct:disabled{opacity:1;color:#244f38;background:var(--mint);box-shadow:2px 2px 0 var(--ink)}
+.result-actions{display:block}
+.result-secondary-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.result-secondary-actions button{min-height:44px;padding:6px;border:1.5px solid #8f7a82;border-radius:11px;background:transparent;color:#65535a;font-size:10px;font-weight:900;cursor:pointer}
+
+.question-card--wrong,.answer-choice--wrong{animation:none}
+@keyframes loading-sheen{to{background-position:-220% 0}}
+@media (prefers-reduced-motion:no-preference){
+  .question-card--wrong,.answer-choice--wrong{animation:shake .25s ease}
+}
+:root[data-reduce-motion=true] .app-loading{animation:none}

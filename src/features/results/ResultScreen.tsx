@@ -4,9 +4,16 @@ import { xpForResult } from "../game/progression";
 import { Mascot } from "../../ui/Mascot";
 import { ShareSheet } from "../share/ShareSheet";
 
-interface ResultScreenProps { result: GameResult; profile: PlayerProfile; isRecord: boolean; onAgain: () => void; onHome: () => void }
+interface ResultScreenProps {
+  result: GameResult;
+  profile: PlayerProfile;
+  isRecord: boolean;
+  onAgain: () => void;
+  onDaily: () => void;
+  onProfile: () => void;
+}
 
-export function ResultScreen({ result, profile, isRecord, onAgain, onHome }: ResultScreenProps) {
+export function ResultScreen({ result, profile, isRecord, onAgain, onDaily, onProfile }: ResultScreenProps) {
   const [sharing, setSharing] = useState(false);
   const accuracy = result.attempts ? Math.round((result.correct / result.attempts) * 100) : 0;
   const title = isRecord ? "新纪录诞生！" : result.correct >= 8 ? "脑洞全开！" : result.correct >= 4 ? "状态越来越好！" : "热身完成！";
@@ -24,9 +31,12 @@ export function ResultScreen({ result, profile, isRecord, onAgain, onHome }: Res
       </section>
       <div className="result-actions">
         <button className="primary-button primary-button--wide" onClick={onAgain}>再玩一局</button>
-        <button className="share-result-button" onClick={() => setSharing(true)}>↗ 晒成绩</button>
       </div>
-      <button className="text-button" onClick={onHome}>先歇一会</button>
+      <div className="result-secondary-actions">
+        <button onClick={onDaily}>每日挑战</button>
+        <button onClick={() => setSharing(true)}>晒成绩</button>
+        <button onClick={onProfile}>查看档案</button>
+      </div>
       {sharing && <ShareSheet result={result} onClose={() => setSharing(false)} />}
     </main>
   );

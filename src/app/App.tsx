@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { HomeScreen } from "../features/home/HomeScreen";
 import { GameScreen } from "../features/game/GameScreen";
 import { ProfileScreen } from "../features/profile/ProfileScreen";
 import { ResultScreen } from "../features/results/ResultScreen";
@@ -9,18 +8,13 @@ import { createGame, MODE_CONFIG, pickQuestions, toResult } from "../features/ga
 import { scoreAnswer } from "../features/game/scoring";
 import type { GameMode, GameResult, GameState, PlayerProfile, Screen } from "../features/game/types";
 import { DEFAULT_PROFILE, loadProfile, recordResult, saveProfile } from "../features/profile/playerStorage";
+import { FirstPlayScreen } from "../features/onboarding/FirstPlayScreen";
+import { buildFirstPlayQuestions, recordFirstAnswerLatency } from "../features/onboarding/firstPlay";
 import "../styles/app.css";
 
 interface AppProps { immersive?: boolean }
 
-const encouragement = {
-  quick: ["这脑回路开了闪电！", "啪！一秒接住答案！", "团子还没眨眼，你就会了！"],
-  combo: ["你已经猜疯啦，根本拦不住！", "连击起飞，脑洞有火花！", "这手感，稳稳拿捏！"],
-  normal: ["猜中啦！给聪明的你贴朵小红花。", "就是它！这题没能难住你。", "漂亮！脑袋里的灯又亮一盏。"],
-  wrong: ["方向很近，再拐一个小弯。", "没关系，答案正在跟你捉迷藏。", "差一点点，再看看 Emoji。"],
-};
-
-function sample(values: string[]): string { return values[Math.floor(Math.random() * values.length)]; }
+export const CORRECT_FEEDBACK_MS = 700;
 
 export function App({ immersive = false }: AppProps) {
   const [screen, setScreen] = useState<Screen>("home");
@@ -31,6 +25,7 @@ export function App({ immersive = false }: AppProps) {
   const [isRecord, setIsRecord] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const gameRef = useRef(game);
+  const firstQuestionShownAt = useRef(Date.now());
   gameRef.current = game;
 
   useEffect(() => {
@@ -44,7 +39,7 @@ export function App({ immersive = false }: AppProps) {
     document.documentElement.dataset.reduceMotion = String(profile.reducedMotion);
   }, [profile.themeId, profile.reducedMotion]);
   useEffect(() => {
-    if (hydrated) void saveProfile(profile);
+    if (hydrated) void saveProfile(profile).catch(() => undefined);
   }, [hydrated, profile]);
 
   function finish(current: GameState) {
@@ -71,49 +66,95 @@ export function App({ immersive = false }: AppProps) {
 
   function start(mode: GameMode) {
     const questions = pickQuestions(QUESTIONS, mode, profile.recentQuestionIds);
-    setGame(createGame(mode, questions)); setSecondsLeft(60); setScreen("playing");
+    const nextGame = createGame(mode, questions);
+    gameRef.current = nextGame;
+    setGame(nextGame); setSecondsLeft(60); setScreen("playing");
   }
+
+  function startDefault(onboarding: boolean) {
+    const regular = pickQuestions(QUESTIONS, "timed", profile.recentQuestionIds);
+    const questions = onboarding
+      ? [...buildFirstPlayQuestions(QUESTIONS), ...regular.filter((question) => !["q-052", "q-054", "q-053"].includes(question.id))]
+      : regular;
+    firstQuestionShownAt.current = Date.now();
+    const nextGame = createGame("timed", questions, Date.now(), { onboarding });
+    gameRef.current = nextGame;
+    setGame(nextGame);
+    setSecondsLeft(60);
+    setScreen("playing");
+  }
+
+  useEffect(() => {
+    if (hydrated && screen === "home" && !game) startDefault(!profile.onboardingCompleted);
+  }, [hydrated, screen, game, profile.onboardingCompleted]);
 
   function advance(current: GameState): GameState {
     const nextIndex = current.index + 1;
     const shouldFinish = MODE_CONFIG[current.mode].endsBy === "count" && nextIndex >= current.questions.length;
-    const next = { ...current, index: nextIndex, hintLevel: 0 as const, questionStartedAt: Date.now(), feedback: undefined, finished: shouldFinish };
+    const now = Date.now();
+    const beginsTimedPlay = current.onboarding && nextIndex === 3;
+    const next = {
+      ...current,
+      index: nextIndex,
+      hintUsed: false,
+      deadline: beginsTimedPlay ? now + 60_000 : current.deadline,
+      questionStartedAt: now,
+      feedback: undefined,
+      finished: shouldFinish,
+    };
+    if (beginsTimedPlay) {
+      setSecondsLeft(60);
+      setProfile((currentProfile) => ({ ...currentProfile, onboardingCompleted: true }));
+    }
     if (shouldFinish) window.setTimeout(() => finish(next), 350);
     return next;
   }
 
   function submit(answer: string) {
-    if (!game || game.feedback) return;
-    const question = game.questions[game.index];
+    const current = gameRef.current;
+    if (!current || current.feedback?.kind === "correct") return;
+    const question = current.questions[current.index];
     const correct = matchesAnswer(answer, question);
+    if (current.onboarding && current.index === 0 && profile.firstAnswerLatencyMs === undefined) {
+      const latency = recordFirstAnswerLatency(undefined, firstQuestionShownAt.current, Date.now());
+      setProfile((current) => ({ ...current, firstAnswerLatencyMs: latency }));
+    }
     if (correct) {
-      const nextCombo = game.combo + 1;
-      const elapsed = Date.now() - game.questionStartedAt;
-      const gained = scoreAnswer(question.baseScore, elapsed, nextCombo, game.hintLevel);
-      const text = sample(nextCombo >= 5 ? encouragement.combo : elapsed <= 5000 ? encouragement.quick : encouragement.normal);
-      const next = { ...game, score: game.score + gained, combo: nextCombo, bestCombo: Math.max(game.bestCombo, nextCombo), correct: game.correct + 1, attempts: game.attempts + 1, feedback: { kind: "correct" as const, text, gained, explanation: question.explanation } };
+      const nextCombo = current.combo + 1;
+      const elapsed = Date.now() - current.questionStartedAt;
+      const gained = scoreAnswer(question.baseScore, elapsed, nextCombo, current.hintUsed);
+      const next = { ...current, score: current.score + gained, combo: nextCombo, bestCombo: Math.max(current.bestCombo, nextCombo), correct: current.correct + 1, attempts: current.attempts + 1, feedback: { kind: "correct" as const, text: "猜中啦", gained, explanation: question.explanation } };
+      gameRef.current = next;
       setGame(next);
-      window.setTimeout(() => setGame((latest) => latest ? advance(latest) : latest), 2_200);
+      window.setTimeout(() => setGame((latest) => {
+        if (!latest) return latest;
+        const advanced = advance(latest);
+        gameRef.current = advanced;
+        return advanced;
+      }), CORRECT_FEEDBACK_MS);
     } else {
-      const lives = MODE_CONFIG[game.mode].hasLives ? game.lives - 1 : game.lives;
-      const next = { ...game, lives, combo: 0, attempts: game.attempts + 1, feedback: { kind: "wrong" as const, text: sample(encouragement.wrong) } };
+      const lives = MODE_CONFIG[current.mode].hasLives ? current.lives - 1 : current.lives;
+      const next = { ...current, lives, combo: 0, attempts: current.attempts + 1, feedback: { kind: "wrong" as const, text: "不对，再试一次" } };
+      gameRef.current = next;
       setGame(next);
       if (lives <= 0) window.setTimeout(() => finish(next), 650);
-      else window.setTimeout(() => setGame((latest) => latest ? { ...latest, feedback: undefined } : latest), 700);
     }
   }
 
   function hint() {
-    setGame((current) => {
-      if (!current || current.hintLevel >= 3) return current;
-      return { ...current, hintLevel: (current.hintLevel + 1) as 1 | 2 | 3, hintsUsed: current.hintsUsed + 1 };
-    });
+    const current = gameRef.current;
+    if (!current || current.hintUsed) return;
+    const next = { ...current, hintUsed: true, hintsUsed: current.hintsUsed + 1 };
+    gameRef.current = next;
+    setGame(next);
   }
 
   function skip() {
-    if (!game) return;
-    const lives = MODE_CONFIG[game.mode].hasLives ? game.lives - 1 : game.lives;
-    const next = advance({ ...game, lives, combo: 0 });
+    const current = gameRef.current;
+    if (!current || current.onboarding && current.index < 3) return;
+    const lives = MODE_CONFIG[current.mode].hasLives ? current.lives - 1 : current.lives;
+    const next = advance({ ...current, lives, combo: 0 });
+    gameRef.current = next;
     if (lives <= 0) finish(next); else setGame(next);
   }
 
@@ -121,10 +162,11 @@ export function App({ immersive = false }: AppProps) {
 
   return (
     <div className={`app-shell ${immersive ? "app-shell--immersive" : ""}`}>
-      {screen === "home" && <HomeScreen profile={profile} onPlay={start} onProfile={() => setScreen("profile")} immersive={immersive} />}
-      {screen === "playing" && game && <GameScreen state={game} secondsLeft={secondsLeft} onSubmit={submit} onHint={hint} onSkip={skip} onExit={() => setScreen("home")} />}
-      {screen === "result" && result && <ResultScreen result={result} profile={profile} isRecord={isRecord} onAgain={() => start(result.mode)} onHome={() => setScreen("home")} />}
-      {screen === "profile" && <ProfileScreen profile={profile} onChange={updateProfile} onBack={() => setScreen("home")} />}
+      {!hydrated && <div className="app-loading" aria-label="正在准备题目" />}
+      {screen === "playing" && game?.onboarding && game.index === 0 && <FirstPlayScreen question={game.questions[0]} questions={game.questions} feedback={game.feedback} onAnswer={submit} />}
+      {screen === "playing" && game && (!game.onboarding || game.index > 0) && <GameScreen state={game} secondsLeft={secondsLeft} bestScore={profile.bestScores[game.mode]} onSubmit={submit} onHint={hint} onSkip={skip} onExit={() => { setGame(undefined); setScreen("home"); }} />}
+      {screen === "result" && result && <ResultScreen result={result} profile={profile} isRecord={isRecord} onAgain={() => start(result.mode)} onDaily={() => start("daily")} onProfile={() => setScreen("profile")} />}
+      {screen === "profile" && <ProfileScreen profile={profile} onChange={updateProfile} onBack={() => { setGame(undefined); setScreen("home"); }} />}
     </div>
   );
 }

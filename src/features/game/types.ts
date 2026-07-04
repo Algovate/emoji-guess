@@ -26,7 +26,9 @@ export interface GameResult {
 }
 
 export interface PlayerProfile {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  onboardingCompleted: boolean;
+  firstAnswerLatencyMs?: number;
   level: number;
   xp: number;
   streakDays: number;
@@ -49,7 +51,9 @@ export interface GameState {
   attempts: number;
   lives: number;
   hintsUsed: number;
-  hintLevel: 0 | 1 | 2 | 3;
+  hintUsed: boolean;
+  onboarding: boolean;
+  statsVisibleFromIndex: number;
   startedAt: number;
   deadline?: number;
   questionStartedAt: number;

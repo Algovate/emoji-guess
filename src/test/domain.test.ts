@@ -18,10 +18,14 @@ describe("answer matching", () => {
 describe("scoring", () => {
   it("applies speed and combo bonuses", () => {
     expect(comboMultiplier(10)).toBe(3);
-    expect(scoreAnswer(100, 4000, 10, 0)).toBe(450);
+    expect(scoreAnswer(100, 4000, 10, false)).toBe(450);
   });
   it("keeps a minimum score after hints", () => {
-    expect(scoreAnswer(10, 9000, 1, 3)).toBe(10);
+    expect(scoreAnswer(10, 9000, 1, true)).toBe(10);
+  });
+  it("removes only the speed bonus after a hint", () => {
+    expect(scoreAnswer(100, 4000, 1, false)).toBe(150);
+    expect(scoreAnswer(100, 4000, 1, true)).toBe(100);
   });
 });
 
@@ -51,6 +55,11 @@ describe("click-only answers", () => {
     const choices = createAnswerChoices(QUESTIONS[0], QUESTIONS);
     expect(choices).toHaveLength(4);
     expect(choices.filter((answer) => answer === QUESTIONS[0].answer)).toHaveLength(1);
+  });
+
+  it("keeps every answer choice the same length", () => {
+    const question = QUESTIONS.find((candidate) => candidate.id === "q-052")!;
+    expect(createAnswerChoices(question, QUESTIONS).every((answer) => answer.length === question.answer.length)).toBe(true);
   });
 });
 
